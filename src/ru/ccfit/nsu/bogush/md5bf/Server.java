@@ -111,7 +111,7 @@ public class Server extends Thread {
 
     private static void usage() {
         System.out.print("Usage\n\t");
-        System.out.print("java -jar md5bf.jar hash port\n\n");
+        System.out.print("java -jar server.jar hash port\n\n");
         System.out.print("Description\n\t");
         System.out.print("A server to send brute-force tasks to client programs that will\n\t" +
                 "brute-force in parallel.\n\n");
