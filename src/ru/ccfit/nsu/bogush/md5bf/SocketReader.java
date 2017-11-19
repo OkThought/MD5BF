@@ -3,6 +3,7 @@ package ru.ccfit.nsu.bogush.md5bf;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
@@ -27,10 +28,14 @@ public class SocketReader {
     }
 
     public int readInt() throws IOException {
-        return  readByte() << 24 +
-                readByte() << 16 +
-                readByte() << 8 +
+        return  (readByte() << 24) |
+                (readByte() << 16) |
+                (readByte() << 8) |
                 readByte();
+    }
+
+    public long readLong() throws IOException {
+        return  ((long) readInt() << 32) | readInt();
     }
 
     public byte[] readBytesFully(int numberOfBytes) throws IOException {
@@ -53,5 +58,9 @@ public class SocketReader {
 
     public UUID readUUID(Charset charset) throws IOException {
         return UUID.fromString(readString(charset, 16));
+    }
+
+    public Task readTask() throws IOException, ClassNotFoundException {
+        return (Task) new ObjectInputStream(inputStream).readObject();
     }
 }
