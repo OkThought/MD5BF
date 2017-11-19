@@ -78,7 +78,7 @@ public class Server extends Thread {
                         return;
                     case TASK_REQUEST:
                         try {
-                            UUID uuid = socketReader.readUUID();
+                            UUID uuid = socketReader.readUUID(CHARSET);
                             setName("Client-" + uuid);
                             System.err.println("Established incoming TASK_REQUEST connection from " + getName());
                         } catch (IOException e) {

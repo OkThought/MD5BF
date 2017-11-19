@@ -51,7 +51,7 @@ public class SocketReader {
         return readString(charset, length);
     }
 
-    public UUID readUUID() throws IOException {
-        return UUID.nameUUIDFromBytes(readBytesFully(16));
+    public UUID readUUID(Charset charset) throws IOException {
+        return UUID.fromString(readString(charset, 16));
     }
 }
