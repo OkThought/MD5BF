@@ -87,17 +87,9 @@ public class Server extends Thread {
                         }
                         break;
                     case TASK_DONE:
-                        int secretStringLength;
-                        try {
-                            secretStringLength = socketReader.readInt();
-                        } catch (IOException e) {
-                            System.err.println("Couldn't read length of the secret string");
-                            return;
-                        }
-
                         String secretString;
                         try {
-                            secretString = socketReader.readString(CHARSET, secretStringLength);
+                            secretString = socketReader.readString(CHARSET);
                         } catch (IOException e) {
                             System.err.println("Couldn't read secret string");
                             return;

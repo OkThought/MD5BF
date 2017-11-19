@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class SocketReader {
-    public static final char[] TEST_CHAR_SIZE_SIMBOL = new char[1];
+    public static final char[] TEST_CHAR_SIZE_SYMBOL = new char[1];
     private InputStream inputStream;
 
     public SocketReader(InputStream inputStream) {
@@ -15,7 +15,7 @@ public class SocketReader {
     }
 
     public static int getCharSize(Charset charset) {
-        return new String(TEST_CHAR_SIZE_SIMBOL).getBytes(charset).length;
+        return new String(TEST_CHAR_SIZE_SYMBOL).getBytes(charset).length;
     }
 
     public byte readByte() throws IOException {
@@ -44,6 +44,11 @@ public class SocketReader {
     public String readString(Charset charset, int length) throws IOException {
         length = length * getCharSize(charset);
         return new String(readBytesFully(length), charset);
+    }
+
+    public String readString(Charset charset) throws IOException {
+        int length = readInt();
+        return readString(charset, length);
     }
 
     public UUID readUUID() throws IOException {
