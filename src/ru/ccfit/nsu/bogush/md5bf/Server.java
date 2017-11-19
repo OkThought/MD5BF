@@ -3,23 +3,38 @@ package ru.ccfit.nsu.bogush.md5bf;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.ALPHABET;
 import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.CHARSET;
 import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.PROTOCOL;
 
 public class Server extends Thread {
     private static final int EXIT_FAILURE = 1;
+    private static final int TASK_QUEUE_SIZE = 16;
+    private static final int MAX_SEQUENCE_LENGTH = 16;
+    private static final long INDEX_STEP = 1024;
     private static int REQUIRED_NUMBER_OF_ARGUMENTS = 2;
     private static int HASH_ARGUMENT_INDEX = 0;
     private static int PORT_ARGUMENT_INDEX = 1;
     private final String md5hash;
     private ServerSocket serverSocket;
+    private TaskCreator taskCreator;
+    private LinkedBlockingQueue<Task> taskQueue = new LinkedBlockingQueue<>(TASK_QUEUE_SIZE);
+    private HashMap<UUID, ClientManager> clientMap = new HashMap<>();
 
     public Server(String md5hash, int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
         this.md5hash = md5hash;
+        taskCreator = new TaskCreator(taskQueue, INDEX_STEP, MAX_SEQUENCE_LENGTH, md5hash.getBytes(CHARSET), ALPHABET);
+    }
+
+    @Override
+    public synchronized void start() {
+        taskCreator.start();
+        super.start();
     }
 
     @Override
@@ -50,55 +65,14 @@ public class Server extends Thread {
                 continue;
             }
 
-            new Thread(() -> {
-                // TODO: 11/19/17 Expand this lambda into public class
-                // TODO: 11/19/17 Add public class' name before each message to console
-                // TODO: 11/19/17 Close io streams and socket before finishing
-                try {
-                    if (!socketReader.readString(CHARSET, PROTOCOL.length()).equals(PROTOCOL)) {
-                        System.err.println("The " + this.getName() + " uses unknown protocol");
-                        return;
-                    }
-                } catch (IOException e) {
-                    System.err.println("Couldn't read protocol");
-                    return;
-                }
-
-                ClientState state;
-                try {
-                    state = ClientState.forByte(socketReader.readByte());
-                } catch (IOException e) {
-                    System.err.println("Couldn't read state");
-                    return;
-                }
-
-                switch (state) {
-                    case UNKNOWN:
-                        System.err.println("Unknown client state detected");
-                        return;
-                    case TASK_REQUEST:
-                        try {
-                            UUID uuid = socketReader.readUUID(CHARSET);
-                            setName("Client-" + uuid);
-                            System.err.println("Established incoming TASK_REQUEST connection from " + getName());
-                        } catch (IOException e) {
-                            System.err.println("Couldn't read uuid");
-                            return;
-                        }
-                        break;
-                    case TASK_DONE:
-                        String secretString;
-                        try {
-                            secretString = socketReader.readString(CHARSET);
-                        } catch (IOException e) {
-                            System.err.println("Couldn't read secret string");
-                            return;
-                        }
-
-                        System.out.println(secretString);
-                }
-            }, "Client-" + client_counter++).start();
+            new ClientManager("ClientManager-" + client_counter++, socketReader, socketWriter, clientSocket).start();
         }
+    }
+
+    @Override
+    public void interrupt() {
+        taskCreator.interrupt();
+        super.interrupt();
     }
 
     private static void usage() {
@@ -133,6 +107,71 @@ public class Server extends Thread {
         } catch (IOException e) {
             System.err.println("Couldn't start the Server");
             System.exit(EXIT_FAILURE);
+        }
+    }
+
+    private class ClientManager extends Thread {
+        private static final String MESSAGE_PREFIX = "ClientManager: ";
+        private SocketReader socketReader;
+        private SocketWriter socketWriter;
+        private Socket socket;
+
+        public ClientManager(String name, SocketReader socketReader, SocketWriter socketWriter, Socket socket) {
+            super(name);
+            this.socketReader = socketReader;
+            this.socketWriter = socketWriter;
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            // TODO: 11/19/17 Close io streams and socket before finishing
+            try {
+                if (!socketReader.readString(CHARSET, PROTOCOL.length()).equals(PROTOCOL)) {
+                    System.err.println(MESSAGE_PREFIX + "The " + this.getName() + " uses unknown protocol");
+                    return;
+                }
+            } catch (IOException e) {
+                System.err.println(MESSAGE_PREFIX + "Couldn't read protocol");
+                return;
+            }
+
+            ConnectionRequestType type;
+            try {
+                type = ConnectionRequestType.forByte(socketReader.readByte());
+            } catch (IOException e) {
+                System.err.println(MESSAGE_PREFIX + "Couldn't read connection request type");
+                return;
+            }
+
+            UUID uuid;
+            try {
+                uuid = socketReader.readUUID(CHARSET);
+                setName("ClientManager-" + uuid);
+                System.err.println(MESSAGE_PREFIX + "Established incoming TASK_REQUEST connection from " + getName());
+            } catch (IOException e) {
+                System.err.println(MESSAGE_PREFIX + "Couldn't read uuid");
+            }
+
+            switch (type) {
+            case TASK_REQUEST:
+
+                break;
+            case TASK_DONE:
+                String secretString;
+                try {
+                    secretString = socketReader.readString(CHARSET);
+                } catch (IOException e) {
+                    System.err.println("Couldn't read secret string");
+                    return;
+                }
+
+                System.out.println(secretString);
+                break;
+            default:
+                System.err.println(MESSAGE_PREFIX + "Unknown client connection request type detected");
+                return;
+            }
         }
     }
 }
