@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
+import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.CHARSET;
 import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.PROTOCOL;
 
 public class Server extends Thread {
@@ -13,7 +14,6 @@ public class Server extends Thread {
     private static int REQUIRED_NUMBER_OF_ARGUMENTS = 2;
     private static int HASH_ARGUMENT_INDEX = 0;
     private static int PORT_ARGUMENT_INDEX = 1;
-    private static final Charset CHARSET = Charset.forName("UTF-8");
     private final String md5hash;
     private ServerSocket serverSocket;
 
