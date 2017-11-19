@@ -22,12 +22,12 @@ public class SymbolSequenceCalculator {
     public static int sequenceLength(long sequenceIndex, int alphabetSize) {
         if (sequenceIndex == 0) return 0;
         if (sequenceIndex <= alphabetSize) return 1;
-        int lenght1 = (int) Math.floor(Math.log(sequenceIndex) / Math.log(alphabetSize));
-        int lenght2 = lenght1+1;
-        if (sequenceIndex < numberOfSequences(lenght1, alphabetSize)) {
-            return lenght1;
+        int length1 = (int) Math.floor(Math.log(sequenceIndex) / Math.log(alphabetSize));
+        int length2 = length1+1;
+        if (sequenceIndex < numberOfSequences(length1, alphabetSize)) {
+            return length1;
         } else {
-            return lenght2;
+            return length2;
         }
     }
 
