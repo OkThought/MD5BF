@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="MD5BF:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/MD5BF_jar</output-path>
-    <root id="archive" name="MD5BF.jar">
-      <element id="module-output" name="MD5BF" />
-    </root>
-  </artifact>
-</component>
