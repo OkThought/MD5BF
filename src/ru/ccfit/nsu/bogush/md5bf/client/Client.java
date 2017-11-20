@@ -3,8 +3,6 @@ package ru.ccfit.nsu.bogush.md5bf.client;
 import ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType;
 import ru.ccfit.nsu.bogush.md5bf.bf.SymbolSequenceCalculator;
 import ru.ccfit.nsu.bogush.md5bf.bf.Task;
-import ru.ccfit.nsu.bogush.md5bf.net.SocketReader;
-import ru.ccfit.nsu.bogush.md5bf.net.SocketWriter;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -29,7 +27,7 @@ public class Client extends Thread {
 
     static {
         try {
-            MD5 = MessageDigest.getInstance("md5");
+            MD5 = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             System.exit(EXIT_FAILURE);
@@ -37,15 +35,11 @@ public class Client extends Thread {
     }
 
     private Socket socket;
-//    private SocketReader reader;
-//    private SocketWriter writer;
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
     private final InetAddress serverAddress;
     private final int serverPort;
     private final UUID uuid;
 
-    public Client(InetAddress serverAddress, int serverPort) throws IOException {
+    private Client(InetAddress serverAddress, int serverPort) throws IOException {
         super("Client");
         this.serverAddress = serverAddress;
         this.serverPort = serverPort;
@@ -102,6 +96,8 @@ public class Client extends Thread {
         int connectionRetriesLeft = CONNECTION_RETRIES_NUMBER;
         String secretString = null;
         while (!Thread.interrupted()) {
+            ObjectInputStream in;
+            ObjectOutputStream out;
             try {
                 System.err.println("Connecting to server " + serverAddress + ":" + serverPort);
                 socket = new Socket();
@@ -112,7 +108,6 @@ public class Client extends Thread {
                 System.err.println("Connected");
             } catch (SocketTimeoutException e) {
                 System.err.println("Connection timed out");
-                e.printStackTrace();
                 if (--connectionRetriesLeft >= 0) {
                     System.err.println("Connection retries left: " + connectionRetriesLeft);
                 } else {
@@ -121,7 +116,6 @@ public class Client extends Thread {
                 continue;
             } catch (IOException e) {
                 System.err.println("Couldn't connect to server");
-                e.printStackTrace();
                 break;
             }
 
@@ -181,6 +175,7 @@ public class Client extends Thread {
 
             try {
                 System.err.println("Close connection");
+                socket.getOutputStream().flush();
                 socket.close();
             } catch (IOException e) {
                 System.err.println("Couldn't close socket");
@@ -205,8 +200,12 @@ public class Client extends Thread {
     private String processTask(Task task) {
         for (long i = task.sequenceStartIndex; i < task.sequenceFinishIndex; i++) {
             String secretString = SymbolSequenceCalculator.stringFromSequenceIndex(i, task.alphabet);
-            if (Arrays.equals(MD5.digest(secretString.getBytes(CHARSET)), task.hash)) {
+            byte[] hash = MD5.digest(secretString.getBytes(CHARSET));
+            if (Arrays.equals(hash, task.hash)) {
                 return secretString;
+            }
+            if (i == task.sequenceFinishIndex-1) {
+                System.err.println("Secret string \"" + secretString + "\" failed checksum");
             }
         }
         return null;
