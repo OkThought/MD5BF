@@ -1,5 +1,6 @@
 package ru.ccfit.nsu.bogush.md5bf.bf;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -53,7 +54,7 @@ public class Task implements Serializable {
         return "Task{" +
                 "sequenceStartIndex=" + sequenceStartIndex +
                 ", sequenceFinishIndex=" + sequenceFinishIndex +
-                ", hash=" + Arrays.toString(hash) +
+                ", hash=" + DatatypeConverter.printHexBinary(hash) +
                 ", alphabet='" + alphabet + '\'' +
                 '}';
     }
