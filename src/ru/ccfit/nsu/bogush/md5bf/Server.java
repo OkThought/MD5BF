@@ -32,6 +32,41 @@ public class Server extends Thread {
         taskCreator = new TaskCreator(taskQueue, INDEX_STEP, MAX_SEQUENCE_LENGTH, md5hash.getBytes(CHARSET), ALPHABET);
     }
 
+    private static void usage() {
+        System.out.print("Usage\n\t");
+        System.out.print("java -jar server.jar hash port\n\n");
+        System.out.print("Description\n\t");
+        System.out.print("A server to send brute-force tasks to client programs that will\n\t" +
+                "brute-force in parallel.\n\n");
+        System.out.print("Parameters\n\t");
+        System.out.print("hash - md5 hash of the string to hack.\n\n\t");
+        System.out.print("port - port on which to listen to tcp connections from clients.\n\n");
+    }
+
+    public static void main(String[] args) {
+        if (args.length != REQUIRED_NUMBER_OF_ARGUMENTS) {
+            usage();
+            System.exit(EXIT_FAILURE);
+        }
+
+        String md5hash = args[HASH_ARGUMENT_INDEX];
+        int port = 0;
+        try {
+            port = Integer.parseInt(args[PORT_ARGUMENT_INDEX]);
+        } catch (NumberFormatException e) {
+            System.err.println("Couldn't parse port number!");
+            usage();
+            System.exit(EXIT_FAILURE);
+        }
+
+        try {
+            new Server(md5hash, port).start();
+        } catch (IOException e) {
+            System.err.println("Couldn't start the Server");
+            System.exit(EXIT_FAILURE);
+        }
+    }
+
     @Override
     public synchronized void start() {
         taskCreator.start();
@@ -181,41 +216,6 @@ public class Server extends Thread {
     public void interrupt() {
         taskCreator.interrupt();
         super.interrupt();
-    }
-
-    private static void usage() {
-        System.out.print("Usage\n\t");
-        System.out.print("java -jar server.jar hash port\n\n");
-        System.out.print("Description\n\t");
-        System.out.print("A server to send brute-force tasks to client programs that will\n\t" +
-                "brute-force in parallel.\n\n");
-        System.out.print("Parameters\n\t");
-        System.out.print("hash - md5 hash of the string to hack.\n\n\t");
-        System.out.print("port - port on which to listen to tcp connections from clients.\n\n");
-    }
-
-    public static void main(String[] args) {
-        if (args.length != REQUIRED_NUMBER_OF_ARGUMENTS) {
-            usage();
-            System.exit(EXIT_FAILURE);
-        }
-
-        String md5hash = args[HASH_ARGUMENT_INDEX];
-        int port = 0;
-        try {
-            port = Integer.parseInt(args[PORT_ARGUMENT_INDEX]);
-        } catch (NumberFormatException e) {
-            System.err.println("Couldn't parse port number!");
-            usage();
-            System.exit(EXIT_FAILURE);
-        }
-
-        try {
-            new Server(md5hash, port).start();
-        } catch (IOException e) {
-            System.err.println("Couldn't start the Server");
-            System.exit(EXIT_FAILURE);
-        }
     }
 
     private static class AssignedTask {

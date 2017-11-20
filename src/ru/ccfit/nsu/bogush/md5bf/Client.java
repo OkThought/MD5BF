@@ -47,6 +47,49 @@ public class Client extends Thread {
         this.uuid = UUID.randomUUID();
     }
 
+    private static void usage() {
+        System.out.print("Usage\n\t");
+        System.out.print("java -jar client.jar address port\n\n");
+        System.out.print("Description\n\t");
+        System.out.print("A client MD5BF program to brute-force in parallel tasks received\n\t" +
+                "from server.\n\n");
+        System.out.print("Parameters\n\t");
+        System.out.print("address - ipv4 or ipv6 address or domain name of the server.\n\n\t");
+        System.out.print("port - port of the server.\n\n");
+    }
+
+    public static void main(String[] args) {
+        if (args.length != REQUIRED_NUMBER_OF_ARGUMENTS) {
+            usage();
+            System.exit(EXIT_FAILURE);
+        }
+
+        InetAddress serverAddress = null;
+        try {
+            serverAddress = InetAddress.getByName(args[ADDRESS_ARGUMENT_INDEX]);
+        } catch (UnknownHostException e) {
+            System.err.println("Couldn't get address by name: " + args[ADDRESS_ARGUMENT_INDEX]);
+            usage();
+            System.exit(EXIT_FAILURE);
+        }
+
+        int serverPort = 0;
+        try {
+            serverPort = Integer.parseInt(args[PORT_ARGUMENT_INDEX]);
+        } catch (NumberFormatException e) {
+            System.err.println("Couldn't parse serverPort number!");
+            usage();
+            System.exit(EXIT_FAILURE);
+        }
+
+        try {
+            new Client(serverAddress, serverPort).start();
+        } catch (IOException e) {
+            System.err.println("Couldn't start the Server");
+            System.exit(EXIT_FAILURE);
+        }
+    }
+
     @Override
     public void run() {
         int connectionRetriesLeft = CONNECTION_RETRIES_NUMBER;
@@ -161,48 +204,5 @@ public class Client extends Thread {
             }
         }
         return null;
-    }
-
-    private static void usage() {
-        System.out.print("Usage\n\t");
-        System.out.print("java -jar client.jar address port\n\n");
-        System.out.print("Description\n\t");
-        System.out.print("A client MD5BF program to brute-force in parallel tasks received\n\t" +
-                "from server.\n\n");
-        System.out.print("Parameters\n\t");
-        System.out.print("address - ipv4 or ipv6 address or domain name of the server.\n\n\t");
-        System.out.print("port - port of the server.\n\n");
-    }
-
-    public static void main(String[] args) {
-        if (args.length != REQUIRED_NUMBER_OF_ARGUMENTS) {
-            usage();
-            System.exit(EXIT_FAILURE);
-        }
-
-        InetAddress serverAddress = null;
-        try {
-            serverAddress = InetAddress.getByName(args[ADDRESS_ARGUMENT_INDEX]);
-        } catch (UnknownHostException e) {
-            System.err.println("Couldn't get address by name: " + args[ADDRESS_ARGUMENT_INDEX]);
-            usage();
-            System.exit(EXIT_FAILURE);
-        }
-
-        int serverPort = 0;
-        try {
-            serverPort = Integer.parseInt(args[PORT_ARGUMENT_INDEX]);
-        } catch (NumberFormatException e) {
-            System.err.println("Couldn't parse serverPort number!");
-            usage();
-            System.exit(EXIT_FAILURE);
-        }
-
-        try {
-            new Client(serverAddress, serverPort).start();
-        } catch (IOException e) {
-            System.err.println("Couldn't start the Server");
-            System.exit(EXIT_FAILURE);
-        }
     }
 }
