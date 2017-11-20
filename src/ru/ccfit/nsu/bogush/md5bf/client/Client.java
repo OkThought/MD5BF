@@ -121,7 +121,7 @@ public class Client extends Thread {
 
             try {
                 System.err.println("Send protocol details: '" + PROTOCOL + '\'');
-                writer.writeString(PROTOCOL, CHARSET);
+                writer.writeBytes(PROTOCOL.getBytes(CHARSET));
             } catch (IOException e) {
                 System.err.println("Couldn't send protocol details");
                 break;
