@@ -110,18 +110,19 @@ public class Server extends Thread {
 
             System.err.println("Client connecting");
 
-            if (recognizeClientProtocol(socketReader)) {
+            if (!recognizeClientProtocol(socketReader)) {
                 try {
                     clientSocket.close();
                 } catch (IOException e) {
                     System.err.println("Couldn't close client socket");
                 }
-                return;
+                continue;
             }
 
             ConnectionRequestType type;
             try {
                 type = ConnectionRequestType.forByte(socketReader.readByte());
+                System.err.println("Received connection request type " + type);
             } catch (IOException e) {
                 System.err.println("Couldn't read connection request type");
                 return;
@@ -155,25 +156,33 @@ public class Server extends Thread {
                 taskTimeoutGuard.start();
             }
         }
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            System.err.println("Couldn't close server socket");
+            e.printStackTrace();
+        }
     }
 
     private boolean recognizeClientProtocol(SocketReader socketReader) {
         try {
-            if (!socketReader.readString(CHARSET, PROTOCOL.length()).equals(PROTOCOL)) {
-                System.err.println("The protocol '" + PROTOCOL + "' is not recognised");
+            String protocol = socketReader.readString(CHARSET, PROTOCOL.length());
+            if (!protocol.equals(PROTOCOL)) {
+                System.err.println("The protocol '" + protocol + "' is not recognised");
                 return false;
             }
         } catch (IOException e) {
             System.err.println("Couldn't read protocol details");
             return false;
         }
+        System.err.println("Protocol details recognised");
         return true;
     }
 
     private UUID readClientUUID(SocketReader socketReader) {
         try {
             return socketReader.readUUID(CHARSET);
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println("Couldn't read uuid");
         }
         return null;
