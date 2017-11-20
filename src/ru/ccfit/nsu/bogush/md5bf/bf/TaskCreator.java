@@ -8,6 +8,7 @@ public class TaskCreator extends Thread {
     private long indexStep;
     private byte[] hash;
     private String alphabet;
+    private TaskCreatorListener taskCreatorListener;
 
     public TaskCreator(BlockingQueue<Task> taskQueue, long indexStep, int maxSequenceLength, byte[] hash, String alphabet) {
         super("Task Creator");
@@ -16,6 +17,10 @@ public class TaskCreator extends Thread {
         this.hash = hash;
         this.maxSequenceIndex = SymbolSequenceCalculator.numberOfSequences(maxSequenceLength, alphabet.length());
         this.alphabet = alphabet;
+    }
+
+    public void setTaskCreatorListener(TaskCreatorListener taskCreatorListener) {
+        this.taskCreatorListener = taskCreatorListener;
     }
 
     @Override
@@ -29,5 +34,12 @@ public class TaskCreator extends Thread {
         } catch (InterruptedException e) {
             System.err.println("Task Creator interrupted");
         }
+        if (taskCreatorListener != null) {
+            taskCreatorListener.tasksFinished();
+        }
+    }
+
+    public interface TaskCreatorListener {
+        void tasksFinished();
     }
 }
