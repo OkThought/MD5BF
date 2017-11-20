@@ -3,6 +3,7 @@ package ru.ccfit.nsu.bogush.md5bf.bf;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class Task implements Serializable {
     public long sequenceStartIndex;
@@ -41,8 +42,19 @@ public class Task implements Serializable {
         sequenceStartIndex = in.readLong();
         sequenceFinishIndex = in.readLong();
     }
+
     private void readObjectNoData()
             throws ObjectStreamException {
         this.alphabet = null;
+    }
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "sequenceStartIndex=" + sequenceStartIndex +
+                ", sequenceFinishIndex=" + sequenceFinishIndex +
+                ", hash=" + Arrays.toString(hash) +
+                ", alphabet='" + alphabet + '\'' +
+                '}';
     }
 }
