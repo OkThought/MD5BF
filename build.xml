@@ -169,8 +169,7 @@
   <target name="compile.module.md5bf.tests" depends="compile.module.md5bf.production" description="compile module MD5BF; test classes" unless="skip.tests"/>
   
   <target name="clean.module.md5bf" description="cleanup module">
-    <delete dir="${md5bf.output.dir}"/>
-    <delete dir="${md5bf.testoutput.dir}"/>
+    <delete dir="${module.md5bf.basedir}/out"/>
   </target>
   
   <target name="init" description="Build initialization">
@@ -200,5 +199,5 @@
     </jar>
   </target>
 
-  <target name="all" depends="build.modules" description="build all"/>
+  <target name="all" depends="server, client" description="build all"/>
 </project>
