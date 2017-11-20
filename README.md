@@ -10,11 +10,13 @@ Task 5 of the course "Networking Technologies" at NSU. Task is to distributed br
 
 ## Usage
 
+`$ cd out` - go to `out` directory
+
 ### Server
 
 A server to send brute-force tasks to client programs that will brute-force in parallel.
 
-`java -jar server.jar hash port`
+`$ java -jar server.jar hash port`
 
 * `hash` - md5 hash of the string to hack
 * `port` - port on which to listen to tcp connections from clients.
@@ -23,7 +25,7 @@ A server to send brute-force tasks to client programs that will brute-force in p
 
 A client MD5BF program to brute-force in parallel tasks received from server.
 
-`java -jar client.jar address port`
+`$ java -jar client.jar address port`
 
 * `address` - ipv4 or ipv6 address or domain name of the server.
 * `port` - port of the server.
