@@ -198,14 +198,15 @@ public class Client extends Thread {
     }
 
     private String processTask(Task task) {
+        long secretStringLogPeriod = (task.sequenceFinishIndex - task.sequenceStartIndex) / 10;
         for (long i = task.sequenceStartIndex; i < task.sequenceFinishIndex; i++) {
             String secretString = SymbolSequenceCalculator.stringFromSequenceIndex(i, task.alphabet);
             byte[] hash = MD5.digest(secretString.getBytes(CHARSET));
+            if (i % secretStringLogPeriod == 0) {
+                System.err.println("Current secret string is: " + secretString);
+            }
             if (Arrays.equals(hash, task.hash)) {
                 return secretString;
-            }
-            if (i == task.sequenceFinishIndex-1) {
-                System.err.println("Secret string \"" + secretString + "\" failed checksum");
             }
         }
         return null;
