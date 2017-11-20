@@ -35,8 +35,8 @@ public class Client extends Thread {
     }
 
     private final Socket socket;
-    private final SocketReader reader;
-    private final SocketWriter writer;
+    private SocketReader reader;
+    private SocketWriter writer;
     private final InetAddress serverAddress;
     private final int serverPort;
     private final UUID uuid;
@@ -46,9 +46,8 @@ public class Client extends Thread {
         this.serverPort = serverPort;
         this.socket = new Socket();
         socket.setSoTimeout(CONNECTION_TIMEOUT);
-        this.reader = new SocketReader(socket.getInputStream());
-        this.writer = new SocketWriter(socket.getOutputStream());
         this.uuid = UUID.randomUUID();
+        System.err.println("Starting MD5BF Client " + uuid);
     }
 
     private static void usage() {
@@ -89,7 +88,8 @@ public class Client extends Thread {
         try {
             new Client(serverAddress, serverPort).start();
         } catch (IOException e) {
-            System.err.println("Couldn't start the Server");
+            System.err.println("Couldn't start the Client");
+            e.printStackTrace();
             System.exit(EXIT_FAILURE);
         }
     }
@@ -97,10 +97,15 @@ public class Client extends Thread {
     @Override
     public void run() {
         int connectionRetriesLeft = CONNECTION_RETRIES_NUMBER;
+        String secretString = null;
         while (!Thread.interrupted()) {
             try {
+                System.err.println("Connecting to server " + serverAddress + ":" + serverPort);
                 socket.connect(new InetSocketAddress(serverAddress, serverPort), CONNECTION_TIMEOUT);
+                this.reader = new SocketReader(socket.getInputStream());
+                this.writer = new SocketWriter(socket.getOutputStream());
                 connectionRetriesLeft = CONNECTION_RETRIES_NUMBER;
+                System.err.println("Connected");
             } catch (SocketTimeoutException e) {
                 System.err.println("Connection timed out");
                 if (--connectionRetriesLeft >= 0) {
@@ -115,84 +120,73 @@ public class Client extends Thread {
             }
 
             try {
+                System.err.println("Send protocol details: '" + PROTOCOL + '\'');
                 writer.writeString(PROTOCOL, CHARSET);
             } catch (IOException e) {
-                System.err.println("Couldn't write protocol");
+                System.err.println("Couldn't send protocol details");
                 break;
             }
 
             try {
+                System.err.println("Send uuid");
                 writer.writeUUID(uuid, CHARSET);
             } catch (IOException e) {
-                System.err.println("Couldn't write uuid");
+                System.err.println("Couldn't send uuid");
                 break;
             }
 
-            try {
-                writer.writeByte(ConnectionRequestType.TASK_REQUEST.toByte());
-            } catch (IOException e) {
-                System.err.println("Couldn't write connection request type");
-                break;
+            if (secretString == null) {
+                try {
+                    System.err.println("Send TASK_REQUEST");
+                    writer.writeByte(ConnectionRequestType.TASK_REQUEST.toByte());
+                } catch (IOException e) {
+                    System.err.println("Couldn't send TASK_REQUEST");
+                    break;
+                }
+            } else {
+                try {
+                    System.err.println("Send TASK_DONE");
+                    writer.writeByte(ConnectionRequestType.TASK_DONE.toByte());
+                } catch (IOException e) {
+                    System.err.println("Couldn't send TASK_DONE");
+                    break;
+                }
+
+                try {
+                    System.err.println("Send secret string: \"" + secretString + "\"");
+                    writer.writeString(secretString, CHARSET);
+                } catch (IOException e) {
+                    System.err.println("Couldn't write secret string");
+                    break;
+                }
             }
 
             Task task;
             try {
+                System.err.println("Receive task");
                 task = reader.readTask();
+                System.err.println("Received task: " + task);
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Couldn't read task");
                 break;
             }
 
             try {
+                System.err.println("Close connection");
                 socket.close();
             } catch (IOException e) {
                 System.err.println("Couldn't close socket");
                 break;
             }
 
-            String secretString = processTask(task);
-            if (secretString != null) {
-                try {
-                    socket.connect(new InetSocketAddress(serverAddress, serverPort));
-                } catch (IOException e) {
-                    System.err.println("Couldn't connect to server");
-                    break;
-                }
-
-                try {
-                    writer.writeString(PROTOCOL, CHARSET);
-                } catch (IOException e) {
-                    System.err.println("Couldn't write protocol");
-                    break;
-                }
-
-                try {
-                    writer.writeUUID(uuid, CHARSET);
-                } catch (IOException e) {
-                    System.err.println("Couldn't write uuid");
-                    break;
-                }
-
-                try {
-                    writer.writeByte(ConnectionRequestType.TASK_DONE.toByte());
-                } catch (IOException e) {
-                    System.err.println("Couldn't write connection request type");
-                    break;
-                }
-
-                try {
-                    writer.writeString(secretString, CHARSET);
-                } catch (IOException e) {
-                    System.err.println("Couldn't write secret string");
-                    break;
-                }
-                break;
-            }
+            secretString = processTask(task);
         }
 
         if (!socket.isClosed()) {
             try {
-                socket.getOutputStream().flush();
+                if (socket.isConnected()) {
+                    socket.getOutputStream().flush();
+                }
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
