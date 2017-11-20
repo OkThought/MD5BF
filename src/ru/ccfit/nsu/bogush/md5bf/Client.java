@@ -17,6 +17,8 @@ public class Client extends Thread {
     private static final int EXIT_FAILURE = 1;
     private static final int ADDRESS_ARGUMENT_INDEX = 0;
     private static final int PORT_ARGUMENT_INDEX = 1;
+    private static final int CONNECTION_RETRIES_NUMBER = 5;
+    private static final int CONNECTION_TIMEOUT = 3000; // millis
     private static MessageDigest MD5;
 
     static {
@@ -38,7 +40,8 @@ public class Client extends Thread {
     public Client(InetAddress serverAddress, int serverPort) throws IOException {
         this.serverAddress = serverAddress;
         this.serverPort = serverPort;
-        this.socket = new Socket(serverAddress, serverPort);
+        this.socket = new Socket();
+        socket.setSoTimeout(CONNECTION_TIMEOUT);
         this.reader = new SocketReader(socket.getInputStream());
         this.writer = new SocketWriter(socket.getOutputStream());
         this.uuid = UUID.randomUUID();
@@ -46,14 +49,22 @@ public class Client extends Thread {
 
     @Override
     public void run() {
+        int connectionRetriesLeft = CONNECTION_RETRIES_NUMBER;
         while (!Thread.interrupted()) {
-            if (!socket.isConnected()) {
-                try {
-                    socket.connect(new InetSocketAddress(serverAddress, serverPort));
-                } catch (IOException e) {
-                    System.err.println("Couldn't connect to server");
-                    break;
+            try {
+                socket.connect(new InetSocketAddress(serverAddress, serverPort), CONNECTION_TIMEOUT);
+                connectionRetriesLeft = CONNECTION_RETRIES_NUMBER;
+            } catch (SocketTimeoutException e) {
+                System.err.println("Connection timed out");
+                if (--connectionRetriesLeft >= 0) {
+                    System.err.println("Connection retries left: " + connectionRetriesLeft);
+                } else {
+                    return;
                 }
+
+            } catch (IOException e) {
+                System.err.println("Couldn't connect to server");
+                break;
             }
 
             try {
@@ -134,6 +145,7 @@ public class Client extends Thread {
 
         if (!socket.isClosed()) {
             try {
+                socket.getOutputStream().flush();
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
