@@ -7,8 +7,12 @@ import ru.ccfit.nsu.bogush.md5bf.net.SocketReader;
 import ru.ccfit.nsu.bogush.md5bf.net.SocketWriter;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -26,14 +30,20 @@ public class Server extends Thread {
     private static final int HASH_ARGUMENT_INDEX = 0;
     private static final int PORT_ARGUMENT_INDEX = 1;
     private static final long TASK_TIMEOUT = 1000; // millis
+    private static final int ACCEPT_TIMEOUT = 5000; // millis
     private ServerSocket serverSocket;
     private TaskCreator taskCreator;
     private LinkedBlockingQueue<Task> taskQueue = new LinkedBlockingQueue<>(TASK_QUEUE_SIZE);
     private ConcurrentHashMap<UUID, AssignedTask> assignedTasks = new ConcurrentHashMap<>();
     private TaskTimeoutGuard taskTimeoutGuard = new TaskTimeoutGuard();
+    private int serverPort;
 
     public Server(String md5hash, int port) throws IOException {
-        this.serverSocket = new ServerSocket(port);
+        super("Server");
+        System.err.println("Initialize MD5 Brute-Force Server of the hash " + md5hash);
+        serverPort = port;
+        this.serverSocket = new ServerSocket();
+        serverSocket.setSoTimeout(ACCEPT_TIMEOUT);
         taskCreator = new TaskCreator(taskQueue, INDEX_STEP, MAX_SEQUENCE_LENGTH, md5hash.getBytes(CHARSET), ALPHABET);
     }
 
@@ -74,35 +84,50 @@ public class Server extends Thread {
 
     @Override
     public synchronized void start() {
+        try {
+            System.err.println("Binding server socket to port " + serverPort);
+            serverSocket.bind(new InetSocketAddress(serverPort));
+        } catch (IOException e) {
+            System.err.println("Couldn't bind server socket");
+            return;
+        }
         taskCreator.start();
         super.start();
     }
 
     @Override
     public void run() {
-        int client_counter = 0;
-
         while (!Thread.interrupted()) {
             Socket clientSocket;
             try {
+                System.err.println("Listen to incoming connections");
                 clientSocket = serverSocket.accept();
+
+            } catch (SocketTimeoutException e) {
+                System.err.println("Listen timed out");
+                taskTimeoutGuard.run();
+                continue;
             } catch (IOException e) {
                 System.err.println("Server: An I/O error occurs when waiting for a connection.");
                 continue;
             }
 
-            SocketReader socketReader;
-            SocketWriter socketWriter;
-            try {
-                socketReader = new SocketReader(clientSocket.getInputStream());
-                socketWriter = new SocketWriter(clientSocket.getOutputStream());
+//            SocketReader socketReader;
+//            SocketWriter socketWriter;
 
+            ObjectInputStream in;
+            ObjectOutputStream out;
+            try {
+//                socketReader = new SocketReader(clientSocket.getInputStream());
+//                socketWriter = new SocketWriter(clientSocket.getOutputStream());
+                out = new ObjectOutputStream(clientSocket.getOutputStream());
+                in = new ObjectInputStream(clientSocket.getInputStream());
             } catch (IOException e) {
-                System.err.println("Server: couldn't get i/o streams of the client socket");
+                System.err.println("Couldn't get i/o streams of the client socket");
                 try {
                     clientSocket.close();
                 } catch (IOException e1) {
-                    System.err.println("Server FATAL: Couldn't close client socket");
+                    System.err.println("FATAL: Couldn't close client socket");
                     System.exit(EXIT_FAILURE);
                 }
                 continue;
@@ -110,7 +135,7 @@ public class Server extends Thread {
 
             System.err.println("Client connecting");
 
-            if (!recognizeClientProtocol(socketReader)) {
+            if (!recognizeClientProtocol(in)) {
                 try {
                     clientSocket.close();
                 } catch (IOException e) {
@@ -119,26 +144,39 @@ public class Server extends Thread {
                 continue;
             }
 
+            UUID uuid;
+            try {
+                uuid = (UUID) in.readObject();
+                System.err.println("Received uuid " + uuid);
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println("Couldn't read uuid");
+                e.printStackTrace();
+                continue;
+            }
+
             ConnectionRequestType type;
             try {
-                type = ConnectionRequestType.forByte(socketReader.readByte());
+                type = ConnectionRequestType.forByte(in.readByte());
                 System.err.println("Received connection request type " + type);
             } catch (IOException e) {
                 System.err.println("Couldn't read connection request type");
-                return;
+                e.printStackTrace();
+                try {
+                    clientSocket.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                continue;
             }
-
-            UUID uuid = readClientUUID(socketReader);
-            if (uuid == null) return;
 
             switch (type) {
                 case TASK_REQUEST:
                     System.err.println("Received TASK_REQUEST from client " + uuid);
-                    handleTaskRequest(socketWriter, uuid);
+                    handleTaskRequest(out, uuid);
                     break;
                 case TASK_DONE:
                     System.err.println("Received TASK_DONE from client " + uuid);
-                    handleTaskDone(socketReader);
+                    handleTaskDone(in);
                     break;
                 default:
                     System.err.println("Unknown client connection request type detected");
@@ -152,9 +190,7 @@ public class Server extends Thread {
                 e.printStackTrace();
             }
 
-            if (!taskTimeoutGuard.isAlive()) {
-                taskTimeoutGuard.start();
-            }
+            taskTimeoutGuard.run();
         }
         try {
             serverSocket.close();
@@ -164,14 +200,14 @@ public class Server extends Thread {
         }
     }
 
-    private boolean recognizeClientProtocol(SocketReader socketReader) {
+    private boolean recognizeClientProtocol(ObjectInputStream in) {
         try {
-            String protocol = socketReader.readString(CHARSET, PROTOCOL.length());
+            String protocol = (String) in.readObject();
             if (!protocol.equals(PROTOCOL)) {
                 System.err.println("The protocol '" + protocol + "' is not recognised");
                 return false;
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println("Couldn't read protocol details");
             return false;
         }
@@ -179,16 +215,7 @@ public class Server extends Thread {
         return true;
     }
 
-    private UUID readClientUUID(SocketReader socketReader) {
-        try {
-            return socketReader.readUUID(CHARSET);
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Couldn't read uuid");
-        }
-        return null;
-    }
-
-    private void handleTaskRequest(SocketWriter socketWriter, UUID uuid) {
+    private void handleTaskRequest(ObjectOutputStream out, UUID uuid) {
         Task task = null;
         try {
             task = taskQueue.take();
@@ -200,17 +227,17 @@ public class Server extends Thread {
         assignedTasks.put(uuid, new AssignedTask(task, System.currentTimeMillis() + TASK_TIMEOUT));
 
         try {
-            socketWriter.writeTask(task);
+            out.writeObject(task);
         } catch (IOException e) {
             System.err.println("Couldn't write task");
         }
     }
 
-    private void handleTaskDone(SocketReader socketReader) {
+    private void handleTaskDone(ObjectInputStream in) {
         String secretString;
         try {
-            secretString = socketReader.readString(CHARSET);
-        } catch (IOException e) {
+            secretString = (String) in.readObject();
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println("Couldn't read secret string");
             return;
         }
@@ -242,11 +269,7 @@ public class Server extends Thread {
         }
     }
 
-    private class TaskTimeoutGuard extends Thread {
-        private TaskTimeoutGuard() {
-            super("Task Timeout Guard");
-        }
-
+    private class TaskTimeoutGuard implements Runnable {
         @Override
         public void run() {
             assignedTasks.forEach((uuid, assignedTask) -> {

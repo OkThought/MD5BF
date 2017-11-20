@@ -7,6 +7,8 @@ import ru.ccfit.nsu.bogush.md5bf.net.SocketReader;
 import ru.ccfit.nsu.bogush.md5bf.net.SocketWriter;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -34,18 +36,19 @@ public class Client extends Thread {
         }
     }
 
-    private final Socket socket;
-    private SocketReader reader;
-    private SocketWriter writer;
+    private Socket socket;
+//    private SocketReader reader;
+//    private SocketWriter writer;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
     private final InetAddress serverAddress;
     private final int serverPort;
     private final UUID uuid;
 
     public Client(InetAddress serverAddress, int serverPort) throws IOException {
+        super("Client");
         this.serverAddress = serverAddress;
         this.serverPort = serverPort;
-        this.socket = new Socket();
-        socket.setSoTimeout(CONNECTION_TIMEOUT);
         this.uuid = UUID.randomUUID();
         System.err.println("Starting MD5BF Client " + uuid);
     }
@@ -101,27 +104,30 @@ public class Client extends Thread {
         while (!Thread.interrupted()) {
             try {
                 System.err.println("Connecting to server " + serverAddress + ":" + serverPort);
+                socket = new Socket();
                 socket.connect(new InetSocketAddress(serverAddress, serverPort), CONNECTION_TIMEOUT);
-                this.reader = new SocketReader(socket.getInputStream());
-                this.writer = new SocketWriter(socket.getOutputStream());
+                out = new ObjectOutputStream(socket.getOutputStream());
+                in = new ObjectInputStream(socket.getInputStream());
                 connectionRetriesLeft = CONNECTION_RETRIES_NUMBER;
                 System.err.println("Connected");
             } catch (SocketTimeoutException e) {
                 System.err.println("Connection timed out");
+                e.printStackTrace();
                 if (--connectionRetriesLeft >= 0) {
                     System.err.println("Connection retries left: " + connectionRetriesLeft);
                 } else {
                     return;
                 }
-
+                continue;
             } catch (IOException e) {
                 System.err.println("Couldn't connect to server");
+                e.printStackTrace();
                 break;
             }
 
             try {
                 System.err.println("Send protocol details: '" + PROTOCOL + '\'');
-                writer.writeBytes(PROTOCOL.getBytes(CHARSET));
+                out.writeObject(PROTOCOL);
             } catch (IOException e) {
                 System.err.println("Couldn't send protocol details");
                 break;
@@ -129,42 +135,44 @@ public class Client extends Thread {
 
             try {
                 System.err.println("Send uuid");
-                writer.writeUUID(uuid, CHARSET);
+                out.writeObject(uuid);
             } catch (IOException e) {
                 System.err.println("Couldn't send uuid");
                 break;
             }
 
-            if (secretString == null) {
-                try {
-                    System.err.println("Send TASK_REQUEST");
-                    writer.writeByte(ConnectionRequestType.TASK_REQUEST.toByte());
-                } catch (IOException e) {
-                    System.err.println("Couldn't send TASK_REQUEST");
-                    break;
-                }
-            } else {
-                try {
-                    System.err.println("Send TASK_DONE");
-                    writer.writeByte(ConnectionRequestType.TASK_DONE.toByte());
-                } catch (IOException e) {
-                    System.err.println("Couldn't send TASK_DONE");
-                    break;
-                }
+            ConnectionRequestType connectionRequestType =
+                    secretString == null ?
+                    ConnectionRequestType.TASK_REQUEST :
+                    ConnectionRequestType.TASK_DONE;
+            try {
+                System.err.println("Send " + connectionRequestType);
+                out.writeByte(connectionRequestType.toByte());
+            } catch (IOException e) {
+                System.err.println("Couldn't send " + connectionRequestType);
+                break;
+            }
 
+            if (secretString != null) {
                 try {
                     System.err.println("Send secret string: \"" + secretString + "\"");
-                    writer.writeString(secretString, CHARSET);
+                    out.writeObject(secretString);
                 } catch (IOException e) {
                     System.err.println("Couldn't write secret string");
                     break;
                 }
             }
 
+            try {
+                out.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             Task task;
             try {
                 System.err.println("Receive task");
-                task = reader.readTask();
+                task = (Task) in.readObject();
                 System.err.println("Received task: " + task);
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Couldn't read task");
