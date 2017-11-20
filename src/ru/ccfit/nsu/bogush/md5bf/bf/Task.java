@@ -1,14 +1,14 @@
-package ru.ccfit.nsu.bogush.md5bf;
+package ru.ccfit.nsu.bogush.md5bf.bf;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 public class Task implements Serializable {
-    long sequenceStartIndex;
-    long sequenceFinishIndex;
-    byte[] hash;
-    String alphabet;
+    public long sequenceStartIndex;
+    public long sequenceFinishIndex;
+    public byte[] hash;
+    public String alphabet;
 
     public Task(long sequenceStartIndex, long sequenceFinishIndex, byte[] hash, String alphabet) {
         this.sequenceStartIndex = sequenceStartIndex;

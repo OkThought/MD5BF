@@ -1,4 +1,4 @@
-package ru.ccfit.nsu.bogush.md5bf;
+package ru.ccfit.nsu.bogush.md5bf.bf;
 
 import java.util.concurrent.BlockingQueue;
 

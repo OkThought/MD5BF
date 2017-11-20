@@ -1,4 +1,6 @@
-package ru.ccfit.nsu.bogush.md5bf;
+package ru.ccfit.nsu.bogush.md5bf.net;
+
+import ru.ccfit.nsu.bogush.md5bf.bf.Task;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;

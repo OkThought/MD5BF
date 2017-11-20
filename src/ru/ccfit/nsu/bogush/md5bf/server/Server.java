@@ -1,9 +1,14 @@
-package ru.ccfit.nsu.bogush.md5bf;
+package ru.ccfit.nsu.bogush.md5bf.server;
+
+import ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType;
+import ru.ccfit.nsu.bogush.md5bf.bf.Task;
+import ru.ccfit.nsu.bogush.md5bf.bf.TaskCreator;
+import ru.ccfit.nsu.bogush.md5bf.net.SocketReader;
+import ru.ccfit.nsu.bogush.md5bf.net.SocketWriter;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;

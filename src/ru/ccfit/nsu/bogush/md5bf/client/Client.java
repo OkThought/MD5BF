@@ -1,6 +1,10 @@
-package ru.ccfit.nsu.bogush.md5bf;
+package ru.ccfit.nsu.bogush.md5bf.client;
 
-import sun.jvm.hotspot.debugger.cdbg.Sym;
+import ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType;
+import ru.ccfit.nsu.bogush.md5bf.bf.SymbolSequenceCalculator;
+import ru.ccfit.nsu.bogush.md5bf.bf.Task;
+import ru.ccfit.nsu.bogush.md5bf.net.SocketReader;
+import ru.ccfit.nsu.bogush.md5bf.net.SocketWriter;
 
 import java.io.IOException;
 import java.net.*;

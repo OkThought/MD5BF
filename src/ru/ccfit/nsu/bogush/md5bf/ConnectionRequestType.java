@@ -2,7 +2,7 @@ package ru.ccfit.nsu.bogush.md5bf;
 
 import java.util.HashMap;
 
-enum ConnectionRequestType {
+public enum ConnectionRequestType {
     TASK_REQUEST, TASK_DONE, UNKNOWN;
 
     private static final byte TASK_REQUEST_BYTE = 0;
@@ -18,11 +18,11 @@ enum ConnectionRequestType {
         byte2stateMap.put(TASK_DONE_BYTE, TASK_DONE);
     }
 
-    static ConnectionRequestType forByte(Byte b) {
+    public static ConnectionRequestType forByte(Byte b) {
         return byte2stateMap.getOrDefault(b, UNKNOWN);
     }
 
-    byte toByte() {
+    public byte toByte() {
         return state2byteMap.get(this);
     }
 }
