@@ -11,7 +11,8 @@ public class TaskCreator extends Thread {
     private int maxSequenceLength;
     private long indexStep;
     private byte[] hash;
-    private char[] suffix;
+    private char[] firstSuffix;
+    private char[] lastSuffix;
     private TaskCreatorListener taskCreatorListener;
     private SymbolSequenceIterator symbolSequenceIterator;
     private char[] alphabet;
@@ -23,8 +24,10 @@ public class TaskCreator extends Thread {
         this.indexStep = indexStep;
         this.hash = hash;
         this.alphabet = alphabet.toCharArray();
-        this.suffix = new char[suffixLength];
-        Arrays.fill(suffix, this.alphabet[this.alphabet.length-1]);
+        this.firstSuffix = new char[suffixLength];
+        Arrays.fill(firstSuffix, this.alphabet[0]);
+        this.lastSuffix = new char[suffixLength];
+        Arrays.fill(lastSuffix, this.alphabet[this.alphabet.length-1]);
         symbolSequenceIterator = new SymbolSequenceIterator(this.alphabet, maxSequenceLength);
     }
 
@@ -34,16 +37,16 @@ public class TaskCreator extends Thread {
 
     @Override
     public void run() {
+        if (!symbolSequenceIterator.hasNext()) return;
         try {
-            while (!Thread.interrupted()) {
-                char[] lastSequence;
-                for (char[] firstSequence; symbolSequenceIterator.hasNext();){
-                    firstSequence = symbolSequenceIterator.next();
-                    lastSequence = new char[firstSequence.length + suffix.length];
-                    System.arraycopy(firstSequence, 0, lastSequence, 0, firstSequence.length);
-                    System.arraycopy(suffix, 0, lastSequence, firstSequence.length, suffix.length);
-                    taskQueue.put(new Task(hash, alphabet, firstSequence, lastSequence));
-                }
+            char[] sequence = symbolSequenceIterator.next();
+            char[] firstSequence = sequence;
+            char[] lastSequence;
+            while (symbolSequenceIterator.hasNext()) {
+                lastSequence = concat(sequence, lastSuffix);
+                taskQueue.put(new Task(hash, alphabet, firstSequence, lastSequence));
+                firstSequence = concat(sequence, firstSuffix);
+                sequence = symbolSequenceIterator.next();
             }
         } catch (InterruptedException e) {
             System.err.println("Task Creator interrupted");
@@ -55,5 +58,12 @@ public class TaskCreator extends Thread {
 
     public interface TaskCreatorListener {
         void tasksFinished();
+    }
+
+    private static char[] concat(char[] a, char[] b) {
+        char[] result = new char[a.length + b.length];
+        System.arraycopy(a, 0, result, 0, a.length);
+        System.arraycopy(b, 0, result, a.length, b.length);
+        return result;
     }
 }
