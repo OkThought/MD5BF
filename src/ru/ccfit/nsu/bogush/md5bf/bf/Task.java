@@ -20,6 +20,22 @@ public class Task implements Iterator<String>, Iterable<String>, Serializable {
         this.symbolSequenceIterator = new SymbolSequenceIterator(alphabet, start, finish);
     }
 
+    public String alphabet() {
+        return alphabet;
+    }
+
+    public String start() {
+        return start;
+    }
+
+    public String finish() {
+        return finish;
+    }
+
+    public byte[] hash() {
+        return hash;
+    }
+
     private void writeObject(java.io.ObjectOutputStream out)
             throws IOException {
         out.writeInt(hash.length);
@@ -53,7 +69,8 @@ public class Task implements Iterator<String>, Iterable<String>, Serializable {
     }
 
     private void readObjectNoData()
-            throws ObjectStreamException {}
+            throws ObjectStreamException {
+    }
 
     @Override
     public Iterator<String> iterator() {
@@ -68,9 +85,5 @@ public class Task implements Iterator<String>, Iterable<String>, Serializable {
     @Override
     public String next() {
         return new String(symbolSequenceIterator.next());
-    }
-
-    public byte[] hash() {
-        return hash;
     }
 }
