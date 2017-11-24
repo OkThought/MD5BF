@@ -1,6 +1,7 @@
 package ru.ccfit.nsu.bogush.md5bf.client;
 
 import ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType;
+import ru.ccfit.nsu.bogush.md5bf.bf.SymbolSequenceIterator;
 import ru.ccfit.nsu.bogush.md5bf.bf.Task;
 
 import java.io.IOException;
@@ -22,7 +23,7 @@ public class Client extends Thread {
     private static final int PORT_ARGUMENT_INDEX = 1;
     private static final int CONNECTION_RETRIES_NUMBER = 5;
     private static final int CONNECTION_TIMEOUT = 3000; // millis
-    private static final int CURRENT_TEST_STRING_LOG_RATE = 10000; // test strings
+    private static final int CURRENT_TEST_STRING_LOG_RATE_MAGNIFIER = 1000;
     private static MessageDigest MD5;
 
     static {
@@ -199,10 +200,12 @@ public class Client extends Thread {
 
     private String processTask(Task task) {
         int i = 0;
+        int maxLen = task.finish().length();
+        int logRate = maxLen * CURRENT_TEST_STRING_LOG_RATE_MAGNIFIER;
         for (String testString : task) {
             byte[] hash = MD5.digest(testString.getBytes(CHARSET));
-            if (i % CURRENT_TEST_STRING_LOG_RATE == 0) {
-                System.err.println("Current test string is: " + testString);
+            if (i % logRate == 0) {
+                System.err.println("Current test string is: \"" + testString + '"');
             }
             if (Arrays.equals(hash, task.hash())) {
                 return testString;
