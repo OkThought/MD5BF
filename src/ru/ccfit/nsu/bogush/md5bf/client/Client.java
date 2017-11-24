@@ -1,7 +1,6 @@
 package ru.ccfit.nsu.bogush.md5bf.client;
 
 import ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType;
-import ru.ccfit.nsu.bogush.md5bf.bf.SymbolSequenceCalculator;
 import ru.ccfit.nsu.bogush.md5bf.bf.Task;
 
 import java.io.IOException;
@@ -23,6 +22,7 @@ public class Client extends Thread {
     private static final int PORT_ARGUMENT_INDEX = 1;
     private static final int CONNECTION_RETRIES_NUMBER = 5;
     private static final int CONNECTION_TIMEOUT = 3000; // millis
+    private static final int CURRENT_TEST_STRING_LOG_PERIOD = 1000; // iterations
     private static MessageDigest MD5;
 
     static {
@@ -198,16 +198,16 @@ public class Client extends Thread {
     }
 
     private String processTask(Task task) {
-        long secretStringLogPeriod = (task.sequenceFinishIndex - task.sequenceStartIndex) / 10;
-        for (long i = task.sequenceStartIndex; i < task.sequenceFinishIndex; i++) {
-            String secretString = SymbolSequenceCalculator.stringFromSequenceIndex(i, task.alphabet);
-            byte[] hash = MD5.digest(secretString.getBytes(CHARSET));
-            if (i % secretStringLogPeriod == 0) {
-                System.err.println("Current secret string is: " + secretString);
+        int i = 0;
+        for (String testString : task) {
+            byte[] hash = MD5.digest(testString.getBytes(CHARSET));
+            if (i % CURRENT_TEST_STRING_LOG_PERIOD == 0) {
+                System.err.println("Current test string is: " + testString);
             }
-            if (Arrays.equals(hash, task.hash)) {
-                return secretString;
+            if (Arrays.equals(hash, task.hash())) {
+                return testString;
             }
+            ++i;
         }
         return null;
     }

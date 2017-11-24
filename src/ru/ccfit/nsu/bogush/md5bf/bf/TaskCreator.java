@@ -4,18 +4,18 @@ import java.util.concurrent.BlockingQueue;
 
 public class TaskCreator extends Thread {
     private BlockingQueue<Task> taskQueue;
-    private long maxSequenceIndex;
+    private int maxSequenceLength;
     private long indexStep;
     private byte[] hash;
     private String alphabet;
     private TaskCreatorListener taskCreatorListener;
 
-    public TaskCreator(BlockingQueue<Task> taskQueue, long indexStep, int maxSequenceLength, byte[] hash, String alphabet) {
+    public TaskCreator(BlockingQueue<Task> taskQueue, int maxSequenceLength, byte[] hash, String alphabet) {
         super("Task Creator");
         this.taskQueue = taskQueue;
+        this.maxSequenceLength = maxSequenceLength;
         this.indexStep = indexStep;
         this.hash = hash;
-        this.maxSequenceIndex = SymbolSequenceCalculator.numberOfSequences(maxSequenceLength, alphabet.length());
         this.alphabet = alphabet;
     }
 
@@ -25,15 +25,11 @@ public class TaskCreator extends Thread {
 
     @Override
     public void run() {
-        try {
-            long index = 0;
-            while (index < maxSequenceIndex) {
-                taskQueue.put(new Task(index, Math.min(index + indexStep, maxSequenceIndex), hash, alphabet));
-                index += indexStep;
-            }
-        } catch (InterruptedException e) {
-            System.err.println("Task Creator interrupted");
-        }
+//        try {
+//            TODO: create and put tasks in taskQueue
+//        } catch (InterruptedException e) {
+//            System.err.println("Task Creator interrupted");
+//        }
         if (taskCreatorListener != null) {
             taskCreatorListener.tasksFinished();
         }
