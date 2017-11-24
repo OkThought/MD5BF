@@ -1,11 +1,10 @@
 package ru.ccfit.nsu.bogush.md5bf.bf;
 
 import java.math.BigInteger;
-import java.nio.CharBuffer;
 import java.util.*;
 
 public class SymbolSequenceIterator implements Iterator<char[]> {
-    private CharBuffer alphabet;
+    private char[] alphabet;
     private char[] current;
     private char[] last;
     private Map<Character, Integer> charIndexInAlphabetMap;
@@ -21,7 +20,7 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
 
 
     public SymbolSequenceIterator(char[] alphabet, char[] firstSequence, char[] lastSequence) {
-        this.alphabet = CharBuffer.wrap(alphabet);
+        this.alphabet = alphabet;
         if (alphabet.length > 0) {
             this.firstAlphabetSymbol = alphabet[0];
             this.lastAlphabetSymbol = alphabet[alphabet.length-1];
@@ -30,8 +29,8 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
         this.last = lastSequence;
         this.maxLength = lastSequence.length;
         this.charIndexInAlphabetMap = new HashMap<>();
-        for (int i = 0; i < this.alphabet.length(); ++i) {
-            this.charIndexInAlphabetMap.put(this.alphabet.charAt(i), i);
+        for (int i = 0; i < alphabet.length; ++i) {
+            this.charIndexInAlphabetMap.put(alphabet[i], i);
         }
     }
 
@@ -50,7 +49,7 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
             return current;
         }
 
-        if (alphabet.length() == 0) {
+        if (alphabet.length == 0) {
             hasNext = false;
             return current;
         }
@@ -76,14 +75,14 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
         return current;
     }
 
-    private boolean tryIncrement(char[] current, CharBuffer alphabet, int position) {
+    private boolean tryIncrement(char[] current, char[] alphabet, int position) {
         if (position < 0) return false;
         char currentChar = current[position];
         if (currentChar == lastAlphabetSymbol) {
             return false;
         }
         int currentCharIndex = charIndexInAlphabetMap.get(currentChar);
-        current[position] = alphabet.charAt(currentCharIndex + 1);
+        current[position] = alphabet[currentCharIndex + 1];
         return true;
     }
 
@@ -100,7 +99,7 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
     }
 
     public int numberOfSequencesOfLength(int length) {
-        return (int) BigInteger.valueOf((long) alphabet.length()).pow(length).longValueExact();
+        return (int) BigInteger.valueOf((long) alphabet.length).pow(length).longValueExact();
     }
 
     public static int numberOfSequencesOfLength(int length, int alphabetSize) {
