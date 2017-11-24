@@ -27,7 +27,7 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
     private static final int TASK_QUEUE_SIZE = 16;
     private static final int TIMED_OUT_TASK_DEQUEUE_SIZE = TASK_QUEUE_SIZE / 2;
     private static final int MAX_SEQUENCE_LENGTH = 12;
-    private static final int SUFFIX_LENGTH = 12;
+    private static final int SUFFIX_LENGTH = 8;
     private static final int REQUIRED_NUMBER_OF_ARGUMENTS = 2;
     private static final int HASH_ARGUMENT_INDEX = 0;
     private static final int PORT_ARGUMENT_INDEX = 1;
@@ -56,8 +56,8 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
         System.out.print("Usage\n\t");
         System.out.print("java -jar server.jar hash port\n\n");
         System.out.print("Description\n\t");
-        System.out.print("A server to send brute-force tasks to client programs that will\n\t" +
-                "brute-force in parallel.\n\n");
+        System.out.print("A server to send brute-force tasks to client programs that will\n\t");
+        System.out.print("brute-force in parallel.\n\n");
         System.out.print("Parameters\n\t");
         System.out.print("hash - md5 hash of the string to hack.\n\n\t");
         System.out.print("port - port on which to listen to tcp connections from clients.\n\n");
