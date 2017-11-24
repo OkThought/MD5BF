@@ -2,7 +2,7 @@ package ru.ccfit.nsu.bogush.md5bf.server;
 
 import ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType;
 import ru.ccfit.nsu.bogush.md5bf.bf.Task;
-import ru.ccfit.nsu.bogush.md5bf.bf.TaskCreator;
+import ru.ccfit.nsu.bogush.md5bf.client.TaskCreator;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
@@ -12,9 +12,12 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.ALPHABET;
 import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.PROTOCOL;
@@ -22,14 +25,16 @@ import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.PROTOCOL;
 public class Server extends Thread implements TaskCreator.TaskCreatorListener {
     private static final int EXIT_FAILURE = 1;
     private static final int TASK_QUEUE_SIZE = 16;
-    private static final int MAX_SEQUENCE_LENGTH = 5;
-    private static final long INDEX_STEP = 1024;
+    private static final int TIMED_OUT_TASK_DEQUEUE_SIZE = TASK_QUEUE_SIZE / 2;
+    private static final int MAX_SEQUENCE_LENGTH = 12;
+    private static final int SUFFIX_LENGTH = 12;
     private static final int REQUIRED_NUMBER_OF_ARGUMENTS = 2;
     private static final int HASH_ARGUMENT_INDEX = 0;
     private static final int PORT_ARGUMENT_INDEX = 1;
     private static final long TASK_TIMEOUT = 1000; // millis
     private static final int ACCEPT_TIMEOUT = 5000; // millis
-    private final LinkedBlockingQueue<Task> taskQueue = new LinkedBlockingQueue<>(TASK_QUEUE_SIZE);
+    private final BlockingQueue<Task> taskQueue = new ArrayBlockingQueue<>(TASK_QUEUE_SIZE);
+    private final Deque<Task> timedOutTaskDequeue = new ArrayDeque<>(TIMED_OUT_TASK_DEQUEUE_SIZE);
     private ServerSocket serverSocket;
     private TaskCreator taskCreator;
     private ConcurrentHashMap<UUID, AssignedTask> assignedTasks = new ConcurrentHashMap<>();
@@ -43,7 +48,7 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
         this.serverSocket = new ServerSocket();
         serverSocket.setSoTimeout(ACCEPT_TIMEOUT);
         byte[] md5hash = DatatypeConverter.parseHexBinary(md5hashString);
-        taskCreator = new TaskCreator(taskQueue, INDEX_STEP, MAX_SEQUENCE_LENGTH, md5hash, ALPHABET);
+        taskCreator = new TaskCreator(md5hash, taskQueue, ALPHABET, SUFFIX_LENGTH, MAX_SEQUENCE_LENGTH);
         taskCreator.setTaskCreatorListener(this);
     }
 
@@ -231,7 +236,11 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
 
         Task task;
         try {
-            task = taskQueue.take();
+            if (timedOutTaskDequeue.isEmpty()) {
+                task = taskQueue.take();
+            } else {
+                task = timedOutTaskDequeue.remove();
+            }
         } catch (InterruptedException e) {
             System.err.println("Interrupted while taking task from queue");
             return;
@@ -271,11 +280,7 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
             if (System.currentTimeMillis() > assignedTask.timeLimit) {
                 assignedTasks.remove(uuid);
                 System.err.println("Client " + uuid + " task timed out");
-                try {
-                    taskQueue.put(assignedTask.task);
-                } catch (InterruptedException e) {
-                    System.err.println(getName() + ": Interrupted on task put in queue");
-                }
+                timedOutTaskDequeue.push(assignedTask.task);
             }
         });
     }

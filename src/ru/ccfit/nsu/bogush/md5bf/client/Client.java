@@ -22,7 +22,7 @@ public class Client extends Thread {
     private static final int PORT_ARGUMENT_INDEX = 1;
     private static final int CONNECTION_RETRIES_NUMBER = 5;
     private static final int CONNECTION_TIMEOUT = 3000; // millis
-    private static final int CURRENT_TEST_STRING_LOG_PERIOD = 1000; // iterations
+    private static final int CURRENT_TEST_STRING_LOG_RATE = 10000; // test strings
     private static MessageDigest MD5;
 
     static {
@@ -201,7 +201,7 @@ public class Client extends Thread {
         int i = 0;
         for (String testString : task) {
             byte[] hash = MD5.digest(testString.getBytes(CHARSET));
-            if (i % CURRENT_TEST_STRING_LOG_PERIOD == 0) {
+            if (i % CURRENT_TEST_STRING_LOG_RATE == 0) {
                 System.err.println("Current test string is: " + testString);
             }
             if (Arrays.equals(hash, task.hash())) {

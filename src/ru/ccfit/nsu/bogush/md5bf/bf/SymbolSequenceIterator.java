@@ -14,10 +14,25 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
     private char firstAlphabetSymbol;
     private char lastAlphabetSymbol;
 
+    public SymbolSequenceIterator(char[] alphabet) {
+        this(alphabet, Integer.MAX_VALUE);
+    }
+
+    public SymbolSequenceIterator(char[] alphabet, int maxLength) {
+        this(alphabet, new char[0], maxLength);
+    }
+
+    public SymbolSequenceIterator(char[] alphabet, int startingLength, int maxLength) {
+        this(alphabet, firstSequence(alphabet, startingLength), maxLength);
+    }
+
+    public SymbolSequenceIterator(char[] alphabet, int startingLength, char[] lastSequence) {
+        this(alphabet, firstSequence(alphabet, startingLength), lastSequence);
+    }
+
     public SymbolSequenceIterator(char[] alphabet, char[] firstSequence, int maxLength) {
         this(alphabet, firstSequence, lastSequence(alphabet, maxLength));
     }
-
 
     public SymbolSequenceIterator(char[] alphabet, char[] firstSequence, char[] lastSequence) {
         this.alphabet = alphabet;
