@@ -152,7 +152,7 @@
   
   <target name="clean" depends="clean.module.md5bf" description="cleanup all"/>
   
-  <target name="build.modules" depends="init, clean, compile.module.md5bf" description="build all modules"/>
+  <target name="build.modules" depends="init, compile.module.md5bf" description="build all modules"/>
 
   <target name="server" depends="build.modules" description="build server.jar">
     <jar manifest="${md5bf.output.dir}/SERVER-META-INF/MANIFEST.MF"
