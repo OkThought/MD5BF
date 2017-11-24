@@ -144,8 +144,21 @@
       <include name="src"/>
     </dirset>
   </path>
-  
-  
+
+
+  <path id="test.classpath">
+    <pathelement location="lib/hamcrest-core-1.3.jar"/>
+    <pathelement location="lib/junit-4.12.jar"/>
+    <pathelement location="${md5bf.output.dir}"/>
+    <pathelement location="${md5bf.testoutput.dir}"/>
+  </path>
+
+  <path id="test.src">
+    <dirset dir="${module.md5bf.basedir}">
+      <include name="test"/>
+    </dirset>
+  </path>
+
   <target name="compile.module.md5bf" depends="compile.module.md5bf.production,compile.module.md5bf.tests" description="Compile module MD5BF"/>
   
   <target name="compile.module.md5bf.production" description="Compile module MD5BF; production classes">
@@ -166,7 +179,13 @@
     </copy>
   </target>
   
-  <target name="compile.module.md5bf.tests" depends="compile.module.md5bf.production" description="compile module MD5BF; test classes" unless="skip.tests"/>
+  <target name="compile.module.md5bf.tests" depends="compile.module.md5bf.production" description="compile module MD5BF; test classes" unless="skip.tests">
+    <mkdir dir="${md5bf.testoutput.dir}"/>
+    <javac destdir="${md5bf.testoutput.dir}" includeantruntime="false">
+      <classpath refid="test.classpath"/>
+      <src refid="test.src"/>
+    </javac>
+  </target>
   
   <target name="clean.module.md5bf" description="cleanup module">
     <delete dir="${module.md5bf.basedir}/out"/>
@@ -199,5 +218,17 @@
     </jar>
   </target>
 
-  <target name="all" depends="server, client" description="build all"/>
+  <target name="test" depends="build.modules" description="run junit tests">
+    <junit>
+      <formatter type="plain" usefile="false"/>
+      <classpath refid="test.classpath"/>
+      <batchtest>
+        <fileset dir="test">
+          <include name="**/*Test.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="all" depends="server, client, test" description="build all"/>
 </project>
