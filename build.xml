@@ -52,56 +52,13 @@
     <exclude name="**/?*.aj"/>
   </patternset>
   
-  <!-- JDK definitions -->
-  
-  <property name="jdk.bin.1.8" value="${jdk.home.1.8}/bin"/>
-  <path id="jdk.classpath.1.8">
-    <fileset dir="${jdk.home.1.8}">
-      <include name="jre/lib/charsets.jar"/>
-      <include name="jre/lib/deploy.jar"/>
-      <include name="jre/lib/ext/cldrdata.jar"/>
-      <include name="jre/lib/ext/dnsns.jar"/>
-      <include name="jre/lib/ext/jaccess.jar"/>
-      <include name="jre/lib/ext/jfxrt.jar"/>
-      <include name="jre/lib/ext/localedata.jar"/>
-      <include name="jre/lib/ext/nashorn.jar"/>
-      <include name="jre/lib/ext/sunec.jar"/>
-      <include name="jre/lib/ext/sunjce_provider.jar"/>
-      <include name="jre/lib/ext/sunpkcs11.jar"/>
-      <include name="jre/lib/ext/zipfs.jar"/>
-      <include name="jre/lib/javaws.jar"/>
-      <include name="jre/lib/jce.jar"/>
-      <include name="jre/lib/jfxswt.jar"/>
-      <include name="jre/lib/jsse.jar"/>
-      <include name="jre/lib/management-agent.jar"/>
-      <include name="jre/lib/plugin.jar"/>
-      <include name="jre/lib/resources.jar"/>
-      <include name="jre/lib/rt.jar"/>
-      <include name="lib/ant-javafx.jar"/>
-      <include name="lib/dt.jar"/>
-      <include name="lib/javafx-mx.jar"/>
-      <include name="lib/jconsole.jar"/>
-      <include name="lib/packager.jar"/>
-      <include name="lib/sa-jdi.jar"/>
-      <include name="lib/tools.jar"/>
-    </fileset>
-  </path>
-  
-  <property name="project.jdk.home" value="${jdk.home.1.8}"/>
-  <property name="project.jdk.bin" value="${jdk.bin.1.8}"/>
-  <property name="project.jdk.classpath" value="jdk.classpath.1.8"/>
-  
   <!-- Modules -->
-  
-  
+
+
   <!-- Module MD5BF -->
   
   <dirname property="module.md5bf.basedir" file="${ant.file}"/>
   
-  
-  <property name="module.jdk.home.md5bf" value="${project.jdk.home}"/>
-  <property name="module.jdk.bin.md5bf" value="${project.jdk.bin}"/>
-  <property name="module.jdk.classpath.md5bf" value="${project.jdk.classpath}"/>
   
   <property name="compiler.args.md5bf" value="-encoding UTF-8 -source 1.8 -target 1.8 ${compiler.args}"/>
   
@@ -113,7 +70,6 @@
   </path>
   
   <path id="md5bf.module.production.classpath">
-    <path refid="${module.jdk.classpath.md5bf}"/>
   </path>
   
   <path id="md5bf.runtime.production.module.classpath">
@@ -121,7 +77,6 @@
   </path>
   
   <path id="md5bf.module.classpath">
-    <path refid="${module.jdk.classpath.md5bf}"/>
     <pathelement location="${md5bf.output.dir}"/>
   </path>
   
@@ -163,7 +118,7 @@
   
   <target name="compile.module.md5bf.production" description="Compile module MD5BF; production classes">
     <mkdir dir="${md5bf.output.dir}"/>
-    <javac destdir="${md5bf.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.md5bf}/javac">
+    <javac destdir="${md5bf.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
       <compilerarg line="${compiler.args.md5bf}"/>
       <bootclasspath refid="md5bf.module.bootclasspath"/>
       <classpath refid="md5bf.module.production.classpath"/>
