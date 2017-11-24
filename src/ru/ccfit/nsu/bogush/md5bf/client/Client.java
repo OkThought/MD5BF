@@ -1,7 +1,6 @@
 package ru.ccfit.nsu.bogush.md5bf.client;
 
 import ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType;
-import ru.ccfit.nsu.bogush.md5bf.bf.SymbolSequenceIterator;
 import ru.ccfit.nsu.bogush.md5bf.bf.Task;
 
 import java.io.IOException;
@@ -13,6 +12,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.UUID;
 
+import static ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType.TASK_DONE;
+import static ru.ccfit.nsu.bogush.md5bf.ConnectionRequestType.TASK_REQUEST;
 import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.CHARSET;
 import static ru.ccfit.nsu.bogush.md5bf.MD5BFInfo.PROTOCOL;
 
@@ -35,10 +36,10 @@ public class Client extends Thread {
         }
     }
 
-    private Socket socket;
     private final InetAddress serverAddress;
     private final int serverPort;
     private final UUID uuid;
+    private Socket socket;
 
     private Client(InetAddress serverAddress, int serverPort) throws IOException {
         super("Client");
@@ -136,10 +137,7 @@ public class Client extends Thread {
                 break;
             }
 
-            ConnectionRequestType connectionRequestType =
-                    secretString == null ?
-                    ConnectionRequestType.TASK_REQUEST :
-                    ConnectionRequestType.TASK_DONE;
+            ConnectionRequestType connectionRequestType = secretString == null ? TASK_REQUEST : TASK_DONE;
             try {
                 System.err.println("Send " + connectionRequestType);
                 out.writeByte(connectionRequestType.toByte());

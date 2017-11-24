@@ -38,7 +38,7 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
         this.alphabet = alphabet;
         if (alphabet.length > 0) {
             this.firstAlphabetSymbol = alphabet[0];
-            this.lastAlphabetSymbol = alphabet[alphabet.length-1];
+            this.lastAlphabetSymbol = alphabet[alphabet.length - 1];
         }
         this.current = firstSequence;
         this.last = lastSequence;
@@ -49,11 +49,31 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
         }
     }
 
+    public static int numberOfSequencesOfLength(int length, int alphabetSize) {
+        return (int) Math.pow(alphabetSize, length);
+    }
+
+    public static char[] firstSequence(char[] alphabet, int length) {
+        char[] chars = new char[length];
+        if (alphabet.length > 0) {
+            Arrays.fill(chars, alphabet[0]);
+        }
+        return chars;
+    }
+
+    public static char[] lastSequence(char[] alphabet, int length) {
+        char[] chars = new char[length];
+        if (alphabet.length > 0) {
+            Arrays.fill(chars, alphabet[alphabet.length - 1]);
+        }
+        return chars;
+    }
+
     @Override
     public boolean hasNext() {
         return hasNext && isFirst ?
-                compare(current, last) <= 0:
-                compare(current, last) <  0;
+                compare(current, last) <= 0 :
+                compare(current, last) < 0;
 
     }
 
@@ -115,25 +135,5 @@ public class SymbolSequenceIterator implements Iterator<char[]> {
 
     public int numberOfSequencesOfLength(int length) {
         return (int) BigInteger.valueOf((long) alphabet.length).pow(length).longValueExact();
-    }
-
-    public static int numberOfSequencesOfLength(int length, int alphabetSize) {
-        return (int) Math.pow(alphabetSize, length);
-    }
-
-    public static char[] firstSequence(char[] alphabet, int length) {
-        char[] chars = new char[length];
-        if (alphabet.length > 0) {
-            Arrays.fill(chars, alphabet[0]);
-        }
-        return chars;
-    }
-
-    public static char[] lastSequence(char[] alphabet, int length) {
-        char[] chars = new char[length];
-        if (alphabet.length > 0) {
-            Arrays.fill(chars, alphabet[alphabet.length - 1]);
-        }
-        return chars;
     }
 }

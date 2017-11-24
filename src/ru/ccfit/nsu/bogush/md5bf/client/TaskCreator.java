@@ -27,8 +27,15 @@ public class TaskCreator extends Thread {
         this.firstSuffix = new char[suffixLength];
         Arrays.fill(firstSuffix, this.alphabet[0]);
         this.lastSuffix = new char[suffixLength];
-        Arrays.fill(lastSuffix, this.alphabet[this.alphabet.length-1]);
+        Arrays.fill(lastSuffix, this.alphabet[this.alphabet.length - 1]);
         symbolSequenceIterator = new SymbolSequenceIterator(this.alphabet, maxSequenceLength);
+    }
+
+    private static char[] concat(char[] a, char[] b) {
+        char[] result = new char[a.length + b.length];
+        System.arraycopy(a, 0, result, 0, a.length);
+        System.arraycopy(b, 0, result, a.length, b.length);
+        return result;
     }
 
     public void setTaskCreatorListener(TaskCreatorListener taskCreatorListener) {
@@ -58,12 +65,5 @@ public class TaskCreator extends Thread {
 
     public interface TaskCreatorListener {
         void tasksFinished();
-    }
-
-    private static char[] concat(char[] a, char[] b) {
-        char[] result = new char[a.length + b.length];
-        System.arraycopy(a, 0, result, 0, a.length);
-        System.arraycopy(b, 0, result, a.length, b.length);
-        return result;
     }
 }
