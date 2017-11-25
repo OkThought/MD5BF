@@ -152,8 +152,8 @@ public class Client extends Thread {
                     out.writeObject(secretString);
                 } catch (IOException e) {
                     System.err.println("Couldn't write secret string");
-                    break;
                 }
+                break;
             }
 
             try {
@@ -186,9 +186,6 @@ public class Client extends Thread {
 
         if (!socket.isClosed()) {
             try {
-                if (socket.isConnected()) {
-                    socket.getOutputStream().flush();
-                }
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
