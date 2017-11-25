@@ -28,7 +28,7 @@ public class TaskCreator extends Thread {
         Arrays.fill(firstSuffix, this.alphabet[0]);
         this.lastSuffix = new char[suffixLength];
         Arrays.fill(lastSuffix, this.alphabet[this.alphabet.length - 1]);
-        symbolSequenceIterator = new SymbolSequenceIterator(this.alphabet, maxSequenceLength);
+        symbolSequenceIterator = new SymbolSequenceIterator(this.alphabet, maxSequenceLength - suffixLength);
     }
 
     static char[] concat(char[] a, char[] b) {
@@ -51,12 +51,13 @@ public class TaskCreator extends Thread {
             char[] sequence = symbolSequenceIterator.next();
             char[] firstSequence = sequence;
             char[] lastSequence;
-            while (symbolSequenceIterator.hasNext()) {
+            do {
                 lastSequence = concat(sequence, lastSuffix);
                 taskQueue.put(new Task(hash, alphabet, firstSequence, lastSequence));
-                firstSequence = concat(sequence, firstSuffix);
+                if (!symbolSequenceIterator.hasNext()) break;
                 sequence = symbolSequenceIterator.next();
-            }
+                firstSequence = concat(sequence, firstSuffix);
+            } while (true);
         } catch (InterruptedException e) {
             System.err.println("Task Creator interrupted");
         }
