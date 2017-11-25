@@ -12,9 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,13 +31,16 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
     private static final int PORT_ARGUMENT_INDEX = 1;
     private static final long TASK_TIMEOUT = 1000; // millis
     private static final int ACCEPT_TIMEOUT = 5000; // millis
+
     private final BlockingQueue<Task> taskQueue = new ArrayBlockingQueue<>(TASK_QUEUE_SIZE);
     private final Deque<Task> timedOutTaskDequeue = new ArrayDeque<>(TIMED_OUT_TASK_DEQUEUE_SIZE);
-    private ServerSocket serverSocket;
-    private TaskCreator taskCreator;
-    private ConcurrentHashMap<UUID, AssignedTask> assignedTasks = new ConcurrentHashMap<>();
-    private int serverPort;
+    private final ServerSocket serverSocket;
+    private final TaskCreator taskCreator;
+    private final ConcurrentHashMap<UUID, AssignedTask> assignedTasks = new ConcurrentHashMap<>();
+    private final int serverPort;
     private boolean tasksFinished = false;
+    private boolean secretStringReceived = false;
+    private boolean shouldStop = false;
 
     private Server(String md5hashString, int port) throws IOException {
         super("Server");
@@ -105,7 +106,7 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
         while (!Thread.interrupted()) {
             Socket clientSocket = null;
             try {
-                System.err.println("Listen to incoming connections");
+                System.err.println("\nListen to incoming connections");
                 clientSocket = serverSocket.accept();
             } catch (SocketTimeoutException e) {
                 System.err.println("Listen timed out");
@@ -118,12 +119,13 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
                 handleConnection(clientSocket);
             }
 
-            moveToTaskQueueTimedOutTasks();
+            handleTimedOutTasks();
 
-            if (tasksFinished && assignedTasks.isEmpty() && taskQueue.isEmpty()) {
+            if (shouldStop()) {
                 break;
             }
         }
+
         try {
             serverSocket.close();
         } catch (IOException e) {
@@ -183,10 +185,25 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
             return;
         }
 
+        if (finishing()) {
+            try {
+                System.err.println("Close socket and remove assigned tasks of client " + uuid);
+                assignedTasks.remove(uuid);
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (assignedTasks.isEmpty()) {
+                // all clients either finished or timed out
+                shouldStop = true;
+            }
+            return;
+        }
+
         switch (type) {
             case TASK_REQUEST:
                 System.err.println("Received TASK_REQUEST from client " + uuid);
-                handleTaskRequest(clientSocket, out, uuid);
+                handleTaskRequest(out, uuid);
                 break;
             case TASK_DONE:
                 System.err.println("Received TASK_DONE from client " + uuid);
@@ -222,18 +239,7 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
         return true;
     }
 
-    private void handleTaskRequest(Socket clientSocket, ObjectOutputStream out, UUID uuid) {
-        if (tasksFinished && taskQueue.isEmpty()) {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            System.out.println("Brute-force finished without results");
-            interrupt();
-            return;
-        }
-
+    private void handleTaskRequest(ObjectOutputStream out, UUID uuid) {
         Task task;
         try {
             if (timedOutTaskDequeue.isEmpty()) {
@@ -249,6 +255,7 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
         assignedTasks.put(uuid, new AssignedTask(task, System.currentTimeMillis() + TASK_TIMEOUT));
 
         try {
+//            out.writeBoolean(true); // tasks are available
             out.writeObject(task);
         } catch (IOException e) {
             System.err.println("Couldn't write task");
@@ -263,19 +270,11 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
             System.err.println("Couldn't read secret string");
             return;
         }
-
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            System.err.println("Couldn't close server socket!");
-            System.exit(EXIT_FAILURE);
-        }
-
         System.out.println("secret string is: \"" + secretString + '"');
-        interrupt();
+        finish();
     }
 
-    private void moveToTaskQueueTimedOutTasks() {
+    private void handleTimedOutTasks() {
         assignedTasks.forEach((uuid, assignedTask) -> {
             if (System.currentTimeMillis() > assignedTask.timeLimit) {
                 assignedTasks.remove(uuid);
@@ -283,6 +282,22 @@ public class Server extends Thread implements TaskCreator.TaskCreatorListener {
                 timedOutTaskDequeue.push(assignedTask.task);
             }
         });
+    }
+
+    private void finish() {
+        taskCreator.interrupt();
+        taskQueue.clear();
+        timedOutTaskDequeue.clear();
+        tasksFinished = true;
+        secretStringReceived = true;
+    }
+
+    private boolean finishing() {
+        return secretStringReceived || tasksFinished && taskQueue.isEmpty() && timedOutTaskDequeue.isEmpty();
+    }
+
+    private boolean shouldStop() {
+        return shouldStop || finishing() && assignedTasks.isEmpty();
     }
 
     @Override
