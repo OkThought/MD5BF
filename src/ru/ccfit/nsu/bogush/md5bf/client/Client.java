@@ -100,9 +100,9 @@ public class Client extends Thread {
         while (!Thread.interrupted()) {
             ObjectInputStream in;
             ObjectOutputStream out;
+            socket = new Socket();
             try {
                 System.err.println("Connecting to server " + serverAddress + ":" + serverPort);
-                socket = new Socket();
                 socket.connect(new InetSocketAddress(serverAddress, serverPort), CONNECTION_TIMEOUT);
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
