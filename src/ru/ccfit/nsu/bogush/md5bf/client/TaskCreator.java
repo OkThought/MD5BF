@@ -31,7 +31,9 @@ public class TaskCreator extends Thread {
         symbolSequenceIterator = new SymbolSequenceIterator(this.alphabet, maxSequenceLength);
     }
 
-    private static char[] concat(char[] a, char[] b) {
+    static char[] concat(char[] a, char[] b) {
+        if (a == null) return b;
+        if (b == null) return a;
         char[] result = new char[a.length + b.length];
         System.arraycopy(a, 0, result, 0, a.length);
         System.arraycopy(b, 0, result, a.length, b.length);
