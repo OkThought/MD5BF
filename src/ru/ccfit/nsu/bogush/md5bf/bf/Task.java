@@ -1,5 +1,6 @@
 package ru.ccfit.nsu.bogush.md5bf.bf;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -85,5 +86,15 @@ public class Task implements Iterator<String>, Iterable<String>, Serializable {
     @Override
     public String next() {
         return new String(symbolSequenceIterator.next());
+    }
+
+    @Override
+    public String toString() {
+        return "Task <" +
+                "hash: " + DatatypeConverter.printHexBinary(hash) +
+                " alphabet: '" + alphabet + '\'' +
+                " start: '" + start + '\'' +
+                " finish: '" + finish + '\'' +
+                '>';
     }
 }
